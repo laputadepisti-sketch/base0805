@@ -1,0 +1,1075 @@
+<!doctype html>
+<html lang="hu">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>0805 Base64 Encoder Decoder</title>
+<meta name="description" content="Text to Base64 0805 encoder és decoder">
+<style>
+:root {
+  --bg: #000000;
+  --surface: #09090f;
+  --fg: #f5f5f7;
+  --fg2: rgba(245, 245, 247, 0.78);
+  --fg3: rgba(245, 245, 247, 0.56);
+  --white: #ffffff;
+  --blue: #0000ff;
+  --mint: rgba(246, 255, 249, 0.72);
+  --sep: rgba(255, 255, 255, 0.13);
+  --sep2: rgba(255, 255, 255, 0.2);
+  --hover: rgba(255, 255, 255, 0.08);
+  --danger: #ff4d6d;
+  --success: #78ffb0;
+  --shadow: 0 24px 80px rgba(0, 0, 255, 0.22);
+  --radius-card: 16px;
+  --radius-pill: 18px;
+  --radius-large: 23px;
+}
+* {
+  box-sizing: border-box;
+}
+html {
+  min-height: 100%;
+  background: var(--bg);
+}
+body {
+  margin: 0;
+  min-height: 100vh;
+  background:
+    radial-gradient(circle at 50% -10%, rgba(0, 0, 255, 0.42), transparent 36rem),
+    radial-gradient(circle at 8% 16%, rgba(255, 255, 255, 0.12), transparent 18rem),
+    linear-gradient(180deg, var(--surface) 0%, var(--bg) 46%, var(--bg) 100%);
+  color: var(--fg);
+  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", sans-serif;
+  font-size: 16px;
+  font-weight: 400;
+}
+button,
+textarea {
+  font: inherit;
+}
+button {
+  border: 0;
+}
+a {
+  color: inherit;
+}
+[hidden] {
+  display: none !important;
+}
+.app-shell {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+.header {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  border-bottom: 1px solid var(--sep);
+  background: rgba(9, 9, 15, 0.76);
+  backdrop-filter: blur(28px);
+}
+.header-inner {
+  width: min(1120px, 100%);
+  margin: 0 auto;
+  padding: 14px 16px 12px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+}
+.brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 11px;
+  text-decoration: none;
+  min-width: 0;
+}
+.logo {
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  color: var(--white);
+  background:
+    radial-gradient(circle at 34% 28%, rgba(255, 255, 255, 0.7), transparent 0.45rem),
+    linear-gradient(135deg, var(--blue), #4f6dff);
+  box-shadow: 0 0 36px rgba(0, 0, 255, 0.7);
+  font-weight: 700;
+  letter-spacing: -0.5px;
+}
+.brand-text {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+.brand-title {
+  font-size: 16px;
+  font-weight: 600;
+  letter-spacing: -0.3px;
+  white-space: nowrap;
+}
+.brand-subtitle {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  color: var(--fg3);
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+.nav {
+  display: flex;
+  gap: 8px;
+  padding: 4px;
+  border: 1px solid var(--sep);
+  border-radius: var(--radius-large);
+  background: rgba(255, 255, 255, 0.04);
+}
+.nav-link {
+  min-height: 38px;
+  padding: 0 14px;
+  border-radius: var(--radius-pill);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--fg2);
+  text-decoration: none;
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: -0.3px;
+  transition: background 160ms ease, color 160ms ease, transform 160ms ease;
+}
+.nav-link:hover {
+  background: var(--hover);
+  color: var(--fg);
+}
+.nav-link.is-active {
+  background: var(--white);
+  color: #000000;
+}
+.main {
+  width: min(1120px, 100%);
+  margin: 0 auto;
+  padding: 34px 16px 28px;
+  flex: 1;
+}
+.hero {
+  padding: 28px 0 24px;
+  display: grid;
+  gap: 13px;
+}
+.badge {
+  width: fit-content;
+  padding: 7px 11px;
+  border-radius: 999px;
+  border: 1px solid rgba(0, 0, 255, 0.55);
+  background: rgba(0, 0, 255, 0.17);
+  color: var(--fg);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+}
+.hero h1 {
+  margin: 0;
+  font-size: clamp(34px, 7vw, 74px);
+  line-height: 0.94;
+  letter-spacing: -3px;
+  font-weight: 700;
+}
+.hero p {
+  max-width: 760px;
+  margin: 0;
+  color: var(--fg2);
+  font-size: 16px;
+  line-height: 23.2px;
+}
+.page {
+  animation: pageIn 220ms ease both;
+}
+@keyframes pageIn {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+.workspace {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+.card {
+  border: 1px solid var(--sep);
+  border-radius: var(--radius-card);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.035)),
+    rgba(9, 9, 15, 0.82);
+  box-shadow: var(--shadow);
+  overflow: hidden;
+}
+.card-inner {
+  padding: 16px;
+  display: grid;
+  gap: 13px;
+}
+.card-head {
+  display: flex;
+  align-items: start;
+  justify-content: space-between;
+  gap: 12px;
+}
+.card-head h2 {
+  margin: 2px 0 0;
+  font-size: 20px;
+  font-weight: 700;
+  letter-spacing: -0.6px;
+}
+.eyebrow {
+  margin: 0;
+  color: var(--fg3);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+}
+.counter {
+  flex: none;
+  color: var(--mint);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  padding: 6px 9px;
+  border-radius: 999px;
+  border: 1px solid var(--sep);
+  background: rgba(255, 255, 255, 0.04);
+}
+.field-label {
+  color: var(--fg2);
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: -0.3px;
+}
+.hint {
+  margin: -5px 0 0;
+  color: var(--fg3);
+  font-size: 13px;
+  line-height: 18px;
+}
+textarea {
+  width: 100%;
+  min-height: 246px;
+  resize: vertical;
+  border: 1px solid var(--sep);
+  border-radius: var(--radius-card);
+  background: rgba(255, 255, 255, 0.045);
+  color: var(--fg);
+  padding: 16px;
+  outline: none;
+  line-height: 23.2px;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
+  caret-color: var(--white);
+}
+textarea:focus {
+  border-color: rgba(0, 0, 255, 0.95);
+  box-shadow: 0 0 0 4px rgba(0, 0, 255, 0.22), inset 0 1px 0 rgba(255, 255, 255, 0.05);
+}
+textarea[readonly] {
+  background: rgba(255, 255, 255, 0.032);
+}
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+.btn {
+  min-height: 44px;
+  padding: 0 16px;
+  border-radius: var(--radius-large);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  cursor: pointer;
+  user-select: none;
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--fg);
+  transition: transform 160ms ease, background 160ms ease, border-color 160ms ease, opacity 160ms ease;
+}
+.btn:hover {
+  transform: translateY(-1px);
+}
+.btn:active {
+  transform: translateY(0);
+}
+.btn:disabled {
+  opacity: 0.54;
+  cursor: wait;
+  transform: none;
+}
+.btn-primary {
+  color: var(--white);
+  background: linear-gradient(135deg, var(--blue), #5273ff);
+  box-shadow: 0 12px 34px rgba(0, 0, 255, 0.36);
+}
+.btn-secondary {
+  border: 1px solid var(--sep2);
+  background: rgba(255, 255, 255, 0.08);
+}
+.btn-secondary:hover {
+  background: rgba(255, 255, 255, 0.12);
+}
+.btn-ghost {
+  color: var(--fg2);
+  border: 1px solid var(--sep);
+  background: rgba(255, 255, 255, 0.035);
+}
+.status {
+  min-height: 20px;
+  margin: 0;
+  color: var(--fg3);
+  font-size: 13px;
+  line-height: 20px;
+}
+.status[data-state="success"] {
+  color: var(--success);
+}
+.status[data-state="error"] {
+  color: var(--danger);
+}
+.meta-grid {
+  margin-top: 16px;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+}
+.meta-card {
+  padding: 14px;
+  border-radius: var(--radius-card);
+  border: 1px solid var(--sep);
+  background: rgba(255, 255, 255, 0.045);
+  display: grid;
+  gap: 6px;
+}
+.meta-card span {
+  color: var(--fg3);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+}
+.meta-card strong {
+  color: var(--fg);
+  font-size: 16px;
+  font-weight: 600;
+}
+.footer {
+  width: min(1120px, 100%);
+  margin: 0 auto;
+  padding: 18px 16px 26px;
+  color: var(--mint);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+}
+:focus-visible {
+  outline: 2px solid rgba(0, 0, 255, 0.95);
+  outline-offset: 3px;
+}
+@media (max-width: 860px) {
+  .header-inner {
+    align-items: stretch;
+    flex-direction: column;
+  }
+  .nav {
+    width: 100%;
+  }
+  .nav-link {
+    flex: 1;
+  }
+  .workspace {
+    grid-template-columns: 1fr;
+  }
+  .meta-grid {
+    grid-template-columns: 1fr;
+  }
+  .hero h1 {
+    letter-spacing: -2px;
+  }
+}
+@media (max-width: 520px) {
+  .brand-subtitle {
+    display: none;
+  }
+  .main {
+    padding-top: 22px;
+  }
+  .hero {
+    padding-top: 18px;
+  }
+  .card-inner {
+    padding: 13px;
+  }
+  .btn {
+    width: 100%;
+  }
+}
+</style>
+</head>
+<body>
+<div class="app-shell">
+  <header class="header">
+    <div class="header-inner">
+      <a class="brand" href="#/encode" aria-label="0805 Base64">
+        <span class="logo">805</span>
+        <span class="brand-text">
+          <span class="brand-title">0805 Base64</span>
+          <span class="brand-subtitle">Encoder Decoder</span>
+        </span>
+      </a>
+      <nav class="nav" aria-label="Oldalak">
+        <a class="nav-link" href="#/encode" data-route-link="encode">Kódoló</a>
+        <a class="nav-link" href="#/decode" data-route-link="decode">Dekódoló</a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="main">
+    <section class="hero" aria-labelledby="appTitle">
+      <span class="badge">Szorzó: 0805</span>
+      <h1 id="appTitle">Text ↔ Base64×0805</h1>
+      <p>A szöveg UTF-8 Base64 formára alakul, majd minden Base64 érték 0805-tel szorzott, 5 számjegyes blokk lesz. A dekóder ugyanezt visszafelé végzi el.</p>
+    </section>
+
+    <section class="page" data-route="encode" aria-labelledby="encodeTitle">
+      <div class="workspace">
+        <article class="card">
+          <div class="card-inner">
+            <div class="card-head">
+              <div>
+                <p class="eyebrow">Kódoló</p>
+                <h2 id="encodeTitle">Szöveg</h2>
+              </div>
+              <span class="counter" id="encodeInputCount">0 karakter</span>
+            </div>
+            <label class="field-label" for="encodeInput">Bemeneti szöveg</label>
+            <p class="hint" id="encodeHint">A teljes Unicode szöveg UTF-8-ként kerül Base64-be.</p>
+            <textarea id="encodeInput" spellcheck="false" autocomplete="off" autocapitalize="off" aria-describedby="encodeHint"></textarea>
+            <div class="actions">
+              <button class="btn btn-primary" id="encodeButton" type="button">Kódolás</button>
+              <button class="btn btn-ghost" id="encodeClearButton" type="button">Törlés</button>
+            </div>
+          </div>
+        </article>
+
+        <article class="card">
+          <div class="card-inner">
+            <div class="card-head">
+              <div>
+                <p class="eyebrow">Eredmény</p>
+                <h2>0805 kód</h2>
+              </div>
+              <span class="counter" id="encodeOutputCount">0 számjegy</span>
+            </div>
+            <label class="field-label" for="encodeOutput">Kimenet</label>
+            <p class="hint">Minden blokk 5 számjegy hosszú, a padding értéke 51520.</p>
+            <textarea id="encodeOutput" readonly spellcheck="false"></textarea>
+            <div class="actions">
+              <button class="btn btn-secondary" id="encodeCopyButton" type="button">Másolás</button>
+              <button class="btn btn-secondary" id="sendToDecoderButton" type="button">Át a dekóderbe</button>
+            </div>
+            <p class="status" id="encodeStatus" aria-live="polite"></p>
+          </div>
+        </article>
+      </div>
+
+      <div class="meta-grid" aria-label="Kódolási szabályok">
+        <div class="meta-card">
+          <span>Faktor</span>
+          <strong>0805</strong>
+        </div>
+        <div class="meta-card">
+          <span>Blokkméret</span>
+          <strong>5 számjegy</strong>
+        </div>
+        <div class="meta-card">
+          <span>Padding blokk</span>
+          <strong>51520</strong>
+        </div>
+      </div>
+    </section>
+
+    <section class="page" data-route="decode" aria-labelledby="decodeTitle" hidden>
+      <div class="workspace">
+        <article class="card">
+          <div class="card-inner">
+            <div class="card-head">
+              <div>
+                <p class="eyebrow">Dekódoló</p>
+                <h2 id="decodeTitle">0805 kód</h2>
+              </div>
+              <span class="counter" id="decodeInputCount">0 számjegy</span>
+            </div>
+            <label class="field-label" for="decodeInput">Bemeneti 0805 kód</label>
+            <p class="hint" id="decodeHint">Szóközök és sortörések lehetnek benne, a feldolgozásnál kimaradnak.</p>
+            <textarea id="decodeInput" spellcheck="false" autocomplete="off" autocapitalize="off" inputmode="numeric" aria-describedby="decodeHint"></textarea>
+            <div class="actions">
+              <button class="btn btn-primary" id="decodeButton" type="button">Dekódolás</button>
+              <button class="btn btn-ghost" id="decodeClearButton" type="button">Törlés</button>
+            </div>
+          </div>
+        </article>
+
+        <article class="card">
+          <div class="card-inner">
+            <div class="card-head">
+              <div>
+                <p class="eyebrow">Eredmény</p>
+                <h2>Visszafejtett szöveg</h2>
+              </div>
+              <span class="counter" id="decodeOutputCount">0 karakter</span>
+            </div>
+            <label class="field-label" for="decodeOutput">Kimeneti szöveg</label>
+            <p class="hint">A dekódolás 0805 osztás, Base64 visszaállítás, majd UTF-8 szöveg.</p>
+            <textarea id="decodeOutput" readonly spellcheck="false"></textarea>
+            <div class="actions">
+              <button class="btn btn-secondary" id="decodeCopyButton" type="button">Másolás</button>
+              <button class="btn btn-secondary" id="sendToEncoderButton" type="button">Át a kódolóba</button>
+            </div>
+            <p class="status" id="decodeStatus" aria-live="polite"></p>
+          </div>
+        </article>
+      </div>
+
+      <div class="meta-grid" aria-label="Dekódolási szabályok">
+        <div class="meta-card">
+          <span>Visszaosztás</span>
+          <strong>0805</strong>
+        </div>
+        <div class="meta-card">
+          <span>Base64 érték</span>
+          <strong>0-64</strong>
+        </div>
+        <div class="meta-card">
+          <span>Kimenet</span>
+          <strong>UTF-8 szöveg</strong>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="footer">UTF-8 Base64 → Base64-érték × 0805 → 5 számjegyes blokkok</footer>
+</div>
+
+<script>
+(function () {
+  "use strict";
+
+  var MULTIPLIER_LABEL = "0805";
+  var MULTIPLIER = 805;
+  var CHUNK_SIZE = 5;
+  var BASE64_ALPHABET = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
+  var PADDING_VALUE = 64;
+  var BASE64_PATTERN = /^(?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=)?$/;
+  var DIGIT_PATTERN = /^\d+$/;
+  var fatalDecoderSupported = detectFatalTextDecoder();
+
+  function getElement(id) {
+    var element = document.getElementById(id);
+    if (!element) {
+      throw new Error("Hiányzó elem: " + id);
+    }
+    return element;
+  }
+
+  var elements = {
+    encodeInput: getElement("encodeInput"),
+    encodeOutput: getElement("encodeOutput"),
+    decodeInput: getElement("decodeInput"),
+    decodeOutput: getElement("decodeOutput"),
+    encodeButton: getElement("encodeButton"),
+    decodeButton: getElement("decodeButton"),
+    encodeClearButton: getElement("encodeClearButton"),
+    decodeClearButton: getElement("decodeClearButton"),
+    encodeCopyButton: getElement("encodeCopyButton"),
+    decodeCopyButton: getElement("decodeCopyButton"),
+    sendToDecoderButton: getElement("sendToDecoderButton"),
+    sendToEncoderButton: getElement("sendToEncoderButton"),
+    encodeStatus: getElement("encodeStatus"),
+    decodeStatus: getElement("decodeStatus"),
+    encodeInputCount: getElement("encodeInputCount"),
+    encodeOutputCount: getElement("encodeOutputCount"),
+    decodeInputCount: getElement("decodeInputCount"),
+    decodeOutputCount: getElement("decodeOutputCount")
+  };
+
+  function detectFatalTextDecoder() {
+    if (typeof TextDecoder === "undefined") {
+      return false;
+    }
+    try {
+      var decoder = new TextDecoder("utf-8", { fatal: true });
+      return decoder.fatal === true;
+    } catch (error) {
+      return false;
+    }
+  }
+
+  function ensureEncodingSupport() {
+    if (typeof TextEncoder === "undefined" || typeof TextDecoder === "undefined" || typeof btoa !== "function" || typeof atob !== "function") {
+      throw new Error("A böngésző nem támogatja a szükséges UTF-8 és Base64 API-kat.");
+    }
+  }
+
+  function valueFromBase64Char(character) {
+    if (character === "=") {
+      return PADDING_VALUE;
+    }
+    var index = BASE64_ALPHABET.indexOf(character);
+    if (index === -1) {
+      throw new Error("Érvénytelen Base64 karakter.");
+    }
+    return index;
+  }
+
+  function base64CharFromValue(value) {
+    if (value === PADDING_VALUE) {
+      return "=";
+    }
+    if (Number.isInteger(value) && value >= 0 && value < BASE64_ALPHABET.length) {
+      return BASE64_ALPHABET.charAt(value);
+    }
+    throw new Error("Érvénytelen Base64 érték: " + String(value) + ".");
+  }
+
+  function bytesToBase64(bytes) {
+    var binary = "";
+    var sliceSize = 32768;
+    for (var i = 0; i < bytes.length; i += sliceSize) {
+      var chunk = bytes.subarray(i, i + sliceSize);
+      var part = "";
+      for (var j = 0; j < chunk.length; j += 1) {
+        part += String.fromCharCode(chunk[j]);
+      }
+      binary += part;
+    }
+    return btoa(binary);
+  }
+
+  function base64ToBytes(base64) {
+    var binary = atob(base64);
+    var bytes = new Uint8Array(binary.length);
+    for (var i = 0; i < binary.length; i += 1) {
+      bytes[i] = binary.charCodeAt(i);
+    }
+    return bytes;
+  }
+
+  function textToBase64(text) {
+    ensureEncodingSupport();
+    return bytesToBase64(new TextEncoder().encode(text));
+  }
+
+  function base64ToText(base64) {
+    ensureEncodingSupport();
+    var bytes = base64ToBytes(base64);
+    var decoder = fatalDecoderSupported ? new TextDecoder("utf-8", { fatal: true }) : new TextDecoder("utf-8");
+    var text = decoder.decode(bytes);
+    if (!fatalDecoderSupported && text.indexOf("\uFFFD") !== -1) {
+      throw new Error("A visszafejtett adat nem érvényes UTF-8 szöveg.");
+    }
+    return text;
+  }
+
+  function validateBase64(base64) {
+    if (base64.length % 4 !== 0 || !BASE64_PATTERN.test(base64)) {
+      throw new Error("Érvénytelen Base64 padding.");
+    }
+  }
+
+  function encodeCustomLocal(text) {
+    var base64 = textToBase64(text);
+    var encoded = "";
+    for (var i = 0; i < base64.length; i += 1) {
+      var product = valueFromBase64Char(base64.charAt(i)) * MULTIPLIER;
+      encoded += String(product).padStart(CHUNK_SIZE, "0");
+    }
+    return {
+      ok: true,
+      encoded: encoded,
+      base64: base64,
+      factor: MULTIPLIER_LABEL,
+      chunkSize: CHUNK_SIZE
+    };
+  }
+
+  function normalizeCode(value) {
+    return String(value).replace(/\s+/g, "");
+  }
+
+  function decodeCustomLocal(input) {
+    var clean = normalizeCode(input);
+    if (clean.length === 0) {
+      return {
+        ok: true,
+        text: "",
+        base64: "",
+        factor: MULTIPLIER_LABEL,
+        chunkSize: CHUNK_SIZE
+      };
+    }
+    if (!DIGIT_PATTERN.test(clean)) {
+      throw new Error("Csak számjegyek, szóközök és sortörések lehetnek benne.");
+    }
+    if (clean.length % CHUNK_SIZE !== 0) {
+      throw new Error("A kód hossza nem osztható 5-tel.");
+    }
+    var base64 = "";
+    for (var i = 0; i < clean.length; i += CHUNK_SIZE) {
+      var block = clean.slice(i, i + CHUNK_SIZE);
+      var product = Number(block);
+      var blockIndex = i / CHUNK_SIZE + 1;
+      if (!Number.isInteger(product) || product % MULTIPLIER !== 0) {
+        throw new Error("Érvénytelen 0805 blokk a(z) " + String(blockIndex) + ". helyen.");
+      }
+      var base64Value = product / MULTIPLIER;
+      base64 += base64CharFromValue(base64Value);
+    }
+    validateBase64(base64);
+    try {
+      return {
+        ok: true,
+        text: base64ToText(base64),
+        base64: base64,
+        factor: MULTIPLIER_LABEL,
+        chunkSize: CHUNK_SIZE
+      };
+    } catch (error) {
+      throw new Error("A visszafejtett adat nem érvényes UTF-8 szöveg.");
+    }
+  }
+
+  function createFallbackError(message) {
+    var error = new Error(message);
+    error.fallbackAllowed = true;
+    return error;
+  }
+
+  async function callApi(path, payload) {
+    if (typeof fetch !== "function") {
+      throw createFallbackError("Az API nem elérhető.");
+    }
+    var controller = typeof AbortController !== "undefined" ? new AbortController() : null;
+    var timeoutId = controller ? window.setTimeout(function () {
+      controller.abort();
+    }, 6500) : 0;
+    var response;
+    try {
+      response = await fetch(path, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify(payload),
+        signal: controller ? controller.signal : undefined
+      });
+    } catch (error) {
+      error.fallbackAllowed = true;
+      throw error;
+    } finally {
+      if (timeoutId) {
+        window.clearTimeout(timeoutId);
+      }
+    }
+    var contentType = response.headers.get("content-type") || "";
+    var data = contentType.indexOf("application/json") !== -1 ? await response.json().catch(function () {
+      return null;
+    }) : null;
+    if (!response.ok) {
+      var message = data && typeof data.error === "string" ? data.error : "API hiba.";
+      var httpError = new Error(message);
+      httpError.status = response.status;
+      httpError.fallbackAllowed = response.status === 404 || response.status === 405 || response.status === 501;
+      throw httpError;
+    }
+    if (!data || data.ok !== true) {
+      throw createFallbackError("Érvénytelen API válasz.");
+    }
+    return data;
+  }
+
+  function canFallback(error) {
+    return Boolean(error && (error.fallbackAllowed || error.name === "AbortError" || error instanceof TypeError));
+  }
+
+  async function getEncodeResult(text) {
+    try {
+      var apiResult = await callApi("/api/encode", { text: text });
+      if (typeof apiResult.encoded !== "string") {
+        throw createFallbackError("Érvénytelen API válasz.");
+      }
+      return {
+        result: apiResult,
+        source: "api"
+      };
+    } catch (error) {
+      if (canFallback(error)) {
+        return {
+          result: encodeCustomLocal(text),
+          source: "local"
+        };
+      }
+      throw error;
+    }
+  }
+
+  async function getDecodeResult(code) {
+    try {
+      var apiResult = await callApi("/api/decode", { data: code });
+      if (typeof apiResult.text !== "string") {
+        throw createFallbackError("Érvénytelen API válasz.");
+      }
+      return {
+        result: apiResult,
+        source: "api"
+      };
+    } catch (error) {
+      if (canFallback(error)) {
+        return {
+          result: decodeCustomLocal(code),
+          source: "local"
+        };
+      }
+      throw error;
+    }
+  }
+
+  function setStatus(element, message, state) {
+    element.textContent = message;
+    if (state) {
+      element.setAttribute("data-state", state);
+    } else {
+      element.removeAttribute("data-state");
+    }
+  }
+
+  function formatCount(value, unit) {
+    return value.toLocaleString("hu-HU") + " " + unit;
+  }
+
+  function updateMetrics() {
+    elements.encodeInputCount.textContent = formatCount(Array.from(elements.encodeInput.value).length, "karakter");
+    elements.encodeOutputCount.textContent = formatCount(normalizeCode(elements.encodeOutput.value).length, "számjegy");
+    elements.decodeInputCount.textContent = formatCount(normalizeCode(elements.decodeInput.value).length, "számjegy");
+    elements.decodeOutputCount.textContent = formatCount(Array.from(elements.decodeOutput.value).length, "karakter");
+  }
+
+  function setButtonState(button, busy, idleText, busyText) {
+    button.disabled = busy;
+    button.textContent = busy ? busyText : idleText;
+  }
+
+  function errorMessage(error) {
+    if (error && typeof error.message === "string" && error.message.trim()) {
+      return error.message;
+    }
+    return "Ismeretlen hiba történt.";
+  }
+
+  async function runEncode() {
+    setButtonState(elements.encodeButton, true, "Kódolás", "Kódolás folyamatban");
+    setStatus(elements.encodeStatus, "Feldolgozás folyamatban.", "");
+    try {
+      var output = await getEncodeResult(elements.encodeInput.value);
+      elements.encodeOutput.value = output.result.encoded;
+      updateMetrics();
+      setStatus(elements.encodeStatus, output.source === "api" ? "Kész szerveren." : "Kész a böngészőben.", "success");
+    } catch (error) {
+      setStatus(elements.encodeStatus, errorMessage(error), "error");
+    } finally {
+      setButtonState(elements.encodeButton, false, "Kódolás", "Kódolás folyamatban");
+    }
+  }
+
+  async function runDecode() {
+    setButtonState(elements.decodeButton, true, "Dekódolás", "Dekódolás folyamatban");
+    setStatus(elements.decodeStatus, "Feldolgozás folyamatban.", "");
+    try {
+      var output = await getDecodeResult(elements.decodeInput.value);
+      elements.decodeOutput.value = output.result.text;
+      updateMetrics();
+      setStatus(elements.decodeStatus, output.source === "api" ? "Kész szerveren." : "Kész a böngészőben.", "success");
+    } catch (error) {
+      elements.decodeOutput.value = "";
+      updateMetrics();
+      setStatus(elements.decodeStatus, errorMessage(error), "error");
+    } finally {
+      setButtonState(elements.decodeButton, false, "Dekódolás", "Dekódolás folyamatban");
+    }
+  }
+
+  function clearEncode() {
+    elements.encodeInput.value = "";
+    elements.encodeOutput.value = "";
+    updateMetrics();
+    setStatus(elements.encodeStatus, "", "");
+    elements.encodeInput.focus();
+  }
+
+  function clearDecode() {
+    elements.decodeInput.value = "";
+    elements.decodeOutput.value = "";
+    updateMetrics();
+    setStatus(elements.decodeStatus, "", "");
+    elements.decodeInput.focus();
+  }
+
+  async function copyToClipboard(value, statusElement) {
+    if (value.length === 0) {
+      setStatus(statusElement, "Nincs másolható tartalom.", "error");
+      return;
+    }
+    try {
+      if (navigator.clipboard && typeof navigator.clipboard.writeText === "function") {
+        await navigator.clipboard.writeText(value);
+      } else {
+        var temporary = document.createElement("textarea");
+        temporary.value = value;
+        temporary.setAttribute("readonly", "");
+        temporary.style.position = "fixed";
+        temporary.style.left = "-9999px";
+        temporary.style.top = "0";
+        document.body.appendChild(temporary);
+        temporary.focus();
+        temporary.select();
+        var copied = document.execCommand("copy");
+        document.body.removeChild(temporary);
+        if (!copied) {
+          throw new Error("A másolás sikertelen.");
+        }
+      }
+      setStatus(statusElement, "Másolva.", "success");
+    } catch (error) {
+      setStatus(statusElement, "A másolás sikertelen.", "error");
+    }
+  }
+
+  async function moveEncodedToDecoder() {
+    if (elements.encodeOutput.value.length === 0) {
+      setStatus(elements.encodeStatus, "Nincs átadható 0805 kód.", "error");
+      return;
+    }
+    elements.decodeInput.value = elements.encodeOutput.value;
+    updateMetrics();
+    location.hash = "#/decode";
+    await runDecode();
+  }
+
+  function moveDecodedToEncoder() {
+    if (elements.decodeOutput.value.length === 0) {
+      setStatus(elements.decodeStatus, "Nincs átadható szöveg.", "error");
+      return;
+    }
+    elements.encodeInput.value = elements.decodeOutput.value;
+    elements.encodeOutput.value = "";
+    updateMetrics();
+    location.hash = "#/encode";
+    setStatus(elements.encodeStatus, "Szöveg átvéve.", "success");
+  }
+
+  function replaceHash(hash) {
+    try {
+      history.replaceState(null, "", hash);
+    } catch (error) {
+      location.hash = hash;
+    }
+  }
+
+  function rawRoute() {
+    return location.hash.replace(/^#\/?/, "").trim();
+  }
+
+  function getRoute() {
+    var route = rawRoute();
+    return route === "decode" || route === "encode" ? route : "encode";
+  }
+
+  function applyRoute() {
+    var route = getRoute();
+    if (rawRoute() !== route) {
+      replaceHash("#/" + route);
+    }
+    var pages = document.querySelectorAll("[data-route]");
+    for (var i = 0; i < pages.length; i += 1) {
+      var activePage = pages[i].getAttribute("data-route") === route;
+      pages[i].hidden = !activePage;
+    }
+    var links = document.querySelectorAll("[data-route-link]");
+    for (var j = 0; j < links.length; j += 1) {
+      var activeLink = links[j].getAttribute("data-route-link") === route;
+      links[j].classList.toggle("is-active", activeLink);
+      if (activeLink) {
+        links[j].setAttribute("aria-current", "page");
+      } else {
+        links[j].removeAttribute("aria-current");
+      }
+    }
+  }
+
+  elements.encodeButton.addEventListener("click", function () {
+    runEncode();
+  });
+  elements.decodeButton.addEventListener("click", function () {
+    runDecode();
+  });
+  elements.encodeClearButton.addEventListener("click", clearEncode);
+  elements.decodeClearButton.addEventListener("click", clearDecode);
+  elements.encodeCopyButton.addEventListener("click", function () {
+    copyToClipboard(elements.encodeOutput.value, elements.encodeStatus);
+  });
+  elements.decodeCopyButton.addEventListener("click", function () {
+    copyToClipboard(elements.decodeOutput.value, elements.decodeStatus);
+  });
+  elements.sendToDecoderButton.addEventListener("click", function () {
+    moveEncodedToDecoder();
+  });
+  elements.sendToEncoderButton.addEventListener("click", moveDecodedToEncoder);
+  elements.encodeInput.addEventListener("input", function () {
+    updateMetrics();
+    setStatus(elements.encodeStatus, "", "");
+  });
+  elements.decodeInput.addEventListener("input", function () {
+    updateMetrics();
+    setStatus(elements.decodeStatus, "", "");
+  });
+  elements.encodeInput.addEventListener("keydown", function (event) {
+    if ((event.ctrlKey || event.metaKey) && event.key === "Enter") {
+      event.preventDefault();
+      runEncode();
+    }
+  });
+  elements.decodeInput.addEventListener("keydown", function (event) {
+    if ((event.ctrlKey || event.metaKey) && event.key === "Enter") {
+      event.preventDefault();
+      runDecode();
+    }
+  });
+
+  window.addEventListener("hashchange", applyRoute);
+
+  if (!location.hash) {
+    replaceHash("#/encode");
+  }
+  applyRoute();
+  updateMetrics();
+})();
+</script>
+</body>
+</html>
